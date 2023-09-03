@@ -1,6 +1,10 @@
 package com.dm4nk.chestsmanagermodbydm4nk.commands;
 
 import com.dm4nk.chestsmanagermodbydm4nk.model.ChestWrapper;
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Streams;
 import com.mojang.brigadier.CommandDispatcher;
 import lombok.extern.slf4j.Slf4j;
 import net.minecraft.commands.CommandSourceStack;
@@ -14,11 +18,10 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Stream;
 
 @Slf4j
 public class ManageChestsCommand {
@@ -41,22 +44,50 @@ public class ManageChestsCommand {
 
         ServerLevel serverlevel = command.getLevel();
 
-        Collection<ChestWrapper> chests = getNearbyChests(playerPos, serverlevel);
+        ImmutableCollection<ChestWrapper> chests = getNearbyChests(playerPos, serverlevel);
 
         log.info("Got all chests: {}", chests);
-        command.sendSuccess(() -> Component.translatable("commands.chestsmanagermodbydm4nk.gotallchests", chests), true);
+//        command.sendSuccess(() -> Component.translatable("commands.chestsmanagermodbydm4nk.gotallchests", chests), true);
+//
+//        chests.forEach(chest -> {
+//            Collection<ItemStack> inventory = chest.getInventory();
+//            command.sendSuccess(() -> Component.translatable("commands.chestsmanagermodbydm4nk.chestinventory", chest.getCoordinatesAsString(), inventory), true);
+//        });
 
-        chests.forEach(chest -> {
-            Collection<ItemStack> inventory = chest.getInventory();
-            command.sendSuccess(() -> Component.translatable("commands.chestsmanagermodbydm4nk.chestinventory", chest.getCoordinatesAsString(), inventory), true);
-        });
+        List<ItemStack> allItemStacksSorted = chests.stream()
+                .peek(chestWrapper -> log.info("Chest inventory: {}", chestWrapper.getInventory()))
+                .flatMap(chestWrapper -> chestWrapper.getInventory().stream())
+                .toList();
+        log.info("Got all items: {}", allItemStacksSorted);
 
+        List<List<ItemStack>> inventories = Lists.partition(allItemStacksSorted, 27);
+        log.info("Calculated inventories: {}", inventories);
+
+        List<List<ItemStack>> emptyChests = Collections.nCopies(chests.size() - inventories.size(), Collections.emptyList());
+        log.info("Calculated Empty Chests: {}", emptyChests);
+
+        List<List<ItemStack>> inventoriesWithEmpty = Stream.of(inventories, emptyChests)
+                .flatMap(Collection::stream)
+                .toList();
+        log.info("Added empty chests: {}", inventoriesWithEmpty);
+
+        //
+        Streams.zip(
+                        chests.stream(),
+                        inventoriesWithEmpty.stream(),
+                        ImmutablePair::of
+                )
+                .forEach(pair -> {
+                    pair.getLeft().setInventory(pair.getRight());
+                });
+
+        command.sendSuccess(() -> Component.translatable("commands.chestsmanagermodbydm4nk.finished"), true);
         return 1;
     }
 
-    private Collection<ChestWrapper> getNearbyChests(BlockPos pos, ServerLevel serverlevel) {
+    private ImmutableCollection<ChestWrapper> getNearbyChests(BlockPos pos, ServerLevel serverlevel) {
         log.info("getNearbyChests runs! pos: {}, radius: {}", pos, ManageChestsCommand.RADIUS);
-        Set<ChestWrapper> blocks = new HashSet<>();
+        List<ChestWrapper> blocks = new LinkedList<>();
 
         for (int x = -RADIUS; x <= RADIUS; x++) {
             for (int y = -RADIUS; y <= RADIUS; y++) {
@@ -67,7 +98,6 @@ public class ManageChestsCommand {
                     Block block = blockState.getBlock();
 
                     if (block instanceof ChestBlock) {
-//                        blockState.getValue(BlockStateProperties.CHEST_TYPE);
                         log.info("Got chest! pos: {}", pos);
                         blocks.add(new ChestWrapper(currentPosition, entity, blockState));
                     }
@@ -76,6 +106,6 @@ public class ManageChestsCommand {
         }
 
 
-        return blocks;
+        return ImmutableList.copyOf(blocks);
     }
 }
