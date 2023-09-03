@@ -1,3 +1,4 @@
 {
-  "commands.chestsmanagermodbydm4nk.gotallchests": "Got all chests: [%s]"
+  "commands.chestsmanagermodbydm4nk.gotallchests": "Got all chests: [%s]",
+  "commands.chestsmanagermodbydm4nk.chestinventory": "Chest%s Inventory: %s"
 }
