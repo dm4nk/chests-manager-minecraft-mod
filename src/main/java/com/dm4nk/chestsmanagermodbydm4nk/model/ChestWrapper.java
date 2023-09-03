@@ -46,7 +46,7 @@ public class ChestWrapper {
 
         this.leftBorder = blockState.getValue(BlockStateProperties.CHEST_TYPE).equals(ChestType.RIGHT) ? 27 : 0;
 
-        this.rightBorder = blockState.getValue(BlockStateProperties.CHEST_TYPE).equals(ChestType.RIGHT) ? 53 : 26;
+        this.rightBorder = blockState.getValue(BlockStateProperties.CHEST_TYPE).equals(ChestType.RIGHT) ? 54 : 27;
     }
 
     public Collection<ItemStack> extractInventory() {
@@ -69,12 +69,9 @@ public class ChestWrapper {
             throw new IllegalArgumentException("Too much inventory items");
         }
 
-        Collection<ItemStack> airs = Collections.nCopies(27 - inventory.size(), new ItemStack(Items.AIR, 0));
-
         Streams.zip(
                         IntStream.range(leftBorder, rightBorder).boxed(),
-                        Stream.of(inventory, airs)
-                                .flatMap(Collection::stream),
+                        inventory.stream(),
                         ImmutablePair::of
                 )
                 .forEach(pair -> handler.insertItem(Ints.checkedCast(pair.getLeft()), pair.getValue(), false));
