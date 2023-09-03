@@ -1,5 +1,3 @@
 {
-  "commands.chestsmanagermodbydm4nk.gotallchests": "Нашел все сундуки: %s",
-  "commands.chestsmanagermodbydm4nk.chestinventory": "Сундку%s Инвентарь: %s",
   "commands.chestsmanagermodbydm4nk.finished": "Все сундуки отсортированы!"
 }

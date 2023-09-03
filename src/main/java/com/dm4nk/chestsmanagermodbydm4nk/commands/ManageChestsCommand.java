@@ -47,12 +47,6 @@ public class ManageChestsCommand {
         ImmutableCollection<ChestWrapper> chests = getNearbyChests(playerPos, serverlevel);
 
         log.info("Got all chests: {}", chests);
-//        command.sendSuccess(() -> Component.translatable("commands.chestsmanagermodbydm4nk.gotallchests", chests), true);
-//
-//        chests.forEach(chest -> {
-//            Collection<ItemStack> inventory = chest.getInventory();
-//            command.sendSuccess(() -> Component.translatable("commands.chestsmanagermodbydm4nk.chestinventory", chest.getCoordinatesAsString(), inventory), true);
-//        });
 
         List<ItemStack> allItemStacksSorted = chests.stream()
                 .flatMap(chestWrapper -> chestWrapper.extractInventory().stream())
