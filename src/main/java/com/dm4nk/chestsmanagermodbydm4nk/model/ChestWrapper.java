@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -44,15 +45,16 @@ public class ChestWrapper {
                 .orElseThrow(() -> new IllegalStateException(String.format("No capabilities available for entity %s", entity)));
 
         this.leftBorder = blockState.getValue(BlockStateProperties.CHEST_TYPE).equals(ChestType.RIGHT) ? 27 : 0;
+
         this.rightBorder = blockState.getValue(BlockStateProperties.CHEST_TYPE).equals(ChestType.RIGHT) ? 53 : 26;
     }
 
-    public Collection<ItemStack> getInventory() {
+    public Collection<ItemStack> extractInventory() {
         log.debug("entity: {}", entity);
 
         Collection<ItemStack> inventory = IntStream
                 .range(leftBorder, rightBorder)
-                .mapToObj(position -> handler.getStackInSlot(position).copy())
+                .mapToObj(position -> handler.extractItem(position, 999, false).copy())
                 .filter(itemStack -> !itemStack.isEmpty())
                 .toList();
 
@@ -67,7 +69,7 @@ public class ChestWrapper {
             throw new IllegalArgumentException("Too much inventory items");
         }
 
-        Collection<ItemStack> airs = Collections.nCopies(27 - inventory.size(), ItemStack.EMPTY);
+        Collection<ItemStack> airs = Collections.nCopies(27 - inventory.size(), new ItemStack(Items.AIR, 0));
 
         Streams.zip(
                         IntStream.range(leftBorder, rightBorder).boxed(),

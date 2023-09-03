@@ -55,8 +55,8 @@ public class ManageChestsCommand {
 //        });
 
         List<ItemStack> allItemStacksSorted = chests.stream()
-                .peek(chestWrapper -> log.info("Chest inventory: {}", chestWrapper.getInventory()))
-                .flatMap(chestWrapper -> chestWrapper.getInventory().stream())
+                .flatMap(chestWrapper -> chestWrapper.extractInventory().stream())
+                .sorted(Comparator.comparing(ItemStack::getRarity))
                 .toList();
         log.info("Got all items: {}", allItemStacksSorted);
 
@@ -71,7 +71,6 @@ public class ManageChestsCommand {
                 .toList();
         log.info("Added empty chests: {}", inventoriesWithEmpty);
 
-        //
         Streams.zip(
                         chests.stream(),
                         inventoriesWithEmpty.stream(),
