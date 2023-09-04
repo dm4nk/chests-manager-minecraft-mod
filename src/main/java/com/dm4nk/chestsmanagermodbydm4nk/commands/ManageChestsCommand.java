@@ -1,6 +1,7 @@
 package com.dm4nk.chestsmanagermodbydm4nk.commands;
 
 import com.dm4nk.chestsmanagermodbydm4nk.model.ChestWrapper;
+import com.dm4nk.chestsmanagermodbydm4nk.util.ItemStackComparator;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -12,7 +13,6 @@ import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.ChestBlock;
@@ -23,10 +23,10 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import java.util.*;
 import java.util.stream.Stream;
 
+import static com.dm4nk.chestsmanagermodbydm4nk.util.Constants.RADIUS;
+
 @Slf4j
 public class ManageChestsCommand {
-    private static final Integer RADIUS = 10;
-
     public ManageChestsCommand(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("manage").then(Commands.literal("chests").executes((command) -> {
             log.info("ManageChestsCommand constructor runs! Command: {}", command);
@@ -36,21 +36,17 @@ public class ManageChestsCommand {
 
     private int manageChests(CommandSourceStack command) {
         log.info("manageChests runs! Command: {}", command);
-        Optional<ServerPlayer> player = Optional.ofNullable(command.getPlayer());
-
-        BlockPos playerPos = player
+        BlockPos playerPos = Optional.ofNullable(command.getPlayer())
                 .orElseThrow(() -> new RuntimeException("Player is null for command " + command))
                 .getOnPos();
-
         ServerLevel serverlevel = command.getLevel();
 
         ImmutableCollection<ChestWrapper> chests = getNearbyChests(playerPos, serverlevel);
-
         log.info("Got all chests: {}", chests);
 
         List<ItemStack> allItemStacksSorted = chests.stream()
                 .flatMap(chestWrapper -> chestWrapper.extractInventory().stream())
-                .sorted(Comparator.comparing(ItemStack::getRarity))
+                .sorted(new ItemStackComparator())
                 .toList();
         log.info("Got all items: {}", allItemStacksSorted);
 
@@ -70,16 +66,14 @@ public class ManageChestsCommand {
                         inventoriesWithEmpty.stream(),
                         ImmutablePair::of
                 )
-                .forEach(pair -> {
-                    pair.getLeft().setInventory(pair.getRight());
-                });
+                .forEach(pair -> pair.getLeft().setInventory(pair.getRight()));
 
         command.sendSuccess(() -> Component.translatable("commands.chestsmanagermodbydm4nk.finished"), true);
         return 1;
     }
 
     private ImmutableCollection<ChestWrapper> getNearbyChests(BlockPos pos, ServerLevel serverlevel) {
-        log.info("getNearbyChests runs! pos: {}, radius: {}", pos, ManageChestsCommand.RADIUS);
+        log.info("getNearbyChests runs! pos: {}, radius: {}", pos, RADIUS);
         List<ChestWrapper> blocks = new LinkedList<>();
 
         for (int x = -RADIUS; x <= RADIUS; x++) {

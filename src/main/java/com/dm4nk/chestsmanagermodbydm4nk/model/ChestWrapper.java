@@ -20,6 +20,9 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import java.util.Collection;
 import java.util.stream.IntStream;
 
+import static com.dm4nk.chestsmanagermodbydm4nk.util.Constants.CHEST_CAPACITY;
+import static com.dm4nk.chestsmanagermodbydm4nk.util.Constants.DOUBLE_CHEST_CAPACITY;
+
 @Slf4j
 @Getter
 @Setter
@@ -41,17 +44,15 @@ public class ChestWrapper {
         this.handler = entity.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.NORTH).resolve()
                 .orElseThrow(() -> new IllegalStateException(String.format("No capabilities available for entity %s", entity)));
 
-        this.leftBorder = blockState.getValue(BlockStateProperties.CHEST_TYPE).equals(ChestType.RIGHT) ? 27 : 0;
+        this.leftBorder = blockState.getValue(BlockStateProperties.CHEST_TYPE).equals(ChestType.RIGHT) ? CHEST_CAPACITY : 0;
 
-        this.rightBorder = blockState.getValue(BlockStateProperties.CHEST_TYPE).equals(ChestType.RIGHT) ? 54 : 27;
+        this.rightBorder = blockState.getValue(BlockStateProperties.CHEST_TYPE).equals(ChestType.RIGHT) ? DOUBLE_CHEST_CAPACITY : CHEST_CAPACITY;
     }
 
     public Collection<ItemStack> extractInventory() {
-        log.debug("entity: {}", entity);
-
         Collection<ItemStack> inventory = IntStream
                 .range(leftBorder, rightBorder)
-                .mapToObj(position -> handler.extractItem(position, 999, false).copy())
+                .mapToObj(position -> handler.extractItem(position, Integer.MAX_VALUE, false).copy())
                 .filter(itemStack -> !itemStack.isEmpty())
                 .toList();
 
@@ -62,7 +63,7 @@ public class ChestWrapper {
     public void setInventory(Collection<ItemStack> inventory) {
         log.debug("inventory: {}", inventory);
 
-        if (inventory.size() > 27) {
+        if (inventory.size() > CHEST_CAPACITY) {
             throw new IllegalArgumentException("Too much inventory items");
         }
 
